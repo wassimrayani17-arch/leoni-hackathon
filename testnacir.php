@@ -148,5 +148,47 @@ myInput.onkeyup = function() {
 }
 </script>
 
+
+
+
+
+
+
+
+
+
+
+<?php
+$host = "localhost";
+$user = "root";
+$password = "";
+$dbname = "wordpress";
+
+$conn = new mysqli($host, $user, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "SELECT * FROM admin_bd";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+
+        $username = $row["COL 1"];  // or col1 (depending on structure)
+        $password = $row["COL 2"];
+        $role     = $row["COL 3"];
+
+        echo "User: " . $username . " - Role: " . $role . "<br>";
+    }
+} else {
+    echo "0 results";
+}
+
+$conn->close();
+?>
+
+
 </body>
 </html>
