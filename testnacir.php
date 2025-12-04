@@ -66,8 +66,8 @@ input[type=submit] {
 </style>
 </head>
 <body>
+<center><h1>ADMIN</h1></center>
 
-<h1>Enter your credentials</h1>
 <div class="container">
   <form action="project_indus.html">
     <label for="usrname">Username</label>
