@@ -69,56 +69,72 @@ input[type=submit] {
 <center><h1>ADMIN</h1></center>
 
 <div class="container">
-  <form method="POST" action="main.php">
+  <form method="POST" action="">
     <label for="usrname">Username</label>
     <input type="text" id="usrname" name="usrname" required>
 
     <label for="psw">Password</label>
-    <input type="password" id="psw" name="psw" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required>
-    
+    <input type="password" id="psw" name="psw"
+           pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+           title="Must contain at least one number, one uppercase and lowercase letter, and at least 8 characters"
+           required>
+
     <input type="submit" value="Submit">
   </form>
 </div>
 
-<div id="message">
+<div id="message" style="display:none;">
   <h3>Password must contain the following:</h3>
   <p id="letter" class="invalid">A <b>lowercase</b> letter</p>
   <p id="capital" class="invalid">A <b>capital (uppercase)</b> letter</p>
   <p id="number" class="invalid">A <b>number</b></p>
   <p id="length" class="invalid">Minimum <b>8 characters</b></p>
 </div>
-				
-
 
 <?php
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "wordpress";
+// ================= LOGIN LOGIC ===================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-$conn = new mysqli($host, $user, $password, $dbname);
+    $host = "localhost";
+    $user = "root";
+    $password = "";
+    $dbname = "wordpress";
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+    $conn = new mysqli($host, $user, $password, $dbname);
 
-$sql = "SELECT * FROM admin_bd";
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-
-        $username = $row["COL 1"];  // or col1 (depending on structure)
-        $password = $row["COL 2"];
-        $role     = $row["COL 3"];
-
-        echo "User: " . $username . "- Password=". $password . " - Role: " . $role . "<br>";
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
     }
-} else {
-    echo "0 results";
-}
 
-$conn->close();
+    // Values from form
+    $inputUser = $_POST['usrname'];
+    $inputPass = $_POST['psw'];
+
+    // Query using your real column names
+    $sql = "SELECT * FROM admin_bd 
+            WHERE `COL 1` = '$inputUser' AND `COL 2` = '$inputPass'";
+
+    $result = $conn->query($sql);
+
+    if ($result->num_rows === 1) {
+        $row = $result->fetch_assoc();
+        $role = $row["COL 3"];
+
+        if ($role == 1) {
+            header("Location: admin1.php");
+            exit;
+        }
+        else if ($role == 2) {
+            header("Location: admin2.php");
+            exit;
+        }
+    } 
+    else {
+        echo "<p style='color:red; font-weight:bold;'>❌ Incorrect username or password</p>";
+    }
+
+    $conn->close();
+}
 ?>
 
 <script>
@@ -128,59 +144,51 @@ var capital = document.getElementById("capital");
 var number = document.getElementById("number");
 var length = document.getElementById("length");
 
-// When the user clicks on the password field, show the message box
+// Show message box on focus
 myInput.onfocus = function() {
   document.getElementById("message").style.display = "block";
 }
 
-// When the user clicks outside of the password field, hide the message box
+// Hide message box on blur
 myInput.onblur = function() {
   document.getElementById("message").style.display = "none";
 }
 
-// When the user starts to type something inside the password field
+// Validate password
 myInput.onkeyup = function() {
-  // Validate lowercase letters
-  var lowerCaseLetters = /[a-z]/g;
-  if(myInput.value.match(lowerCaseLetters)) {  
-    letter.classList.remove("invalid");
-    letter.classList.add("valid");
+  let lower = /[a-z]/g;
+  let upper = /[A-Z]/g;
+  let nums = /[0-9]/g;
+
+  // Lowercase
+  if (myInput.value.match(lower)) {
+    letter.classList.add("valid"); letter.classList.remove("invalid");
   } else {
-    letter.classList.remove("valid");
-    letter.classList.add("invalid");
-  }
-  
-  // Validate capital letters
-  var upperCaseLetters = /[A-Z]/g;
-  if(myInput.value.match(upperCaseLetters)) {  
-    capital.classList.remove("invalid");
-    capital.classList.add("valid");
-  } else {
-    capital.classList.remove("valid");
-    capital.classList.add("invalid");
+    letter.classList.add("invalid"); letter.classList.remove("valid");
   }
 
-  // Validate numbers
-  var numbers = /[0-9]/g;
-  if(myInput.value.match(numbers)) {  
-    number.classList.remove("invalid");
-    number.classList.add("valid");
+  // Uppercase
+  if (myInput.value.match(upper)) {
+    capital.classList.add("valid"); capital.classList.remove("invalid");
   } else {
-    number.classList.remove("valid");
-    number.classList.add("invalid");
+    capital.classList.add("invalid"); capital.classList.remove("valid");
   }
-  
-  // Validate length
-  if(myInput.value.length >= 8) {
-    length.classList.remove("invalid");
-    length.classList.add("valid");
+
+  // Numbers
+  if (myInput.value.match(nums)) {
+    number.classList.add("valid"); number.classList.remove("invalid");
   } else {
-    length.classList.remove("valid");
-    length.classList.add("invalid");
+    number.classList.add("invalid"); number.classList.remove("valid");
+  }
+
+  // Length
+  if (myInput.value.length >= 8) {
+    length.classList.add("valid"); length.classList.remove("invalid");
+  } else {
+    length.classList.add("invalid"); length.classList.remove("valid");
   }
 }
-
-
 </script>
 </body>
+
 </html>
