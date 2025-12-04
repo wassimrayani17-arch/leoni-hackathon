@@ -3,7 +3,6 @@
 <body>
 <h1>welcome    </h1>
 <?php echo "hello world"; ?>
-    
 </body>
 
 
