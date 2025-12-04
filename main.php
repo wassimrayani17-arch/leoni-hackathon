@@ -69,7 +69,7 @@ input[type=submit] {
 <center><h1>ADMIN</h1></center>
 
 <div class="container">
-  <form action="project_indus.html">
+  <form method="POST" action="main.php">
     <label for="usrname">Username</label>
     <input type="text" id="usrname" name="usrname" required>
 
@@ -88,6 +88,39 @@ input[type=submit] {
   <p id="length" class="invalid">Minimum <b>8 characters</b></p>
 </div>
 				
+
+
+<?php
+$host = "localhost";
+$user = "root";
+$password = "";
+$dbname = "wordpress";
+
+$conn = new mysqli($host, $user, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "SELECT * FROM admin_bd";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+
+        $username = $row["COL 1"];  // or col1 (depending on structure)
+        $password = $row["COL 2"];
+        $role     = $row["COL 3"];
+
+        echo "User: " . $username . "- Password=". $password . " - Role: " . $role . "<br>";
+    }
+} else {
+    echo "0 results";
+}
+
+$conn->close();
+?>
+
 <script>
 var myInput = document.getElementById("psw");
 var letter = document.getElementById("letter");
@@ -146,49 +179,8 @@ myInput.onkeyup = function() {
     length.classList.add("invalid");
   }
 }
+
+
 </script>
-
-
-
-
-
-
-
-
-
-
-
-<?php
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "wordpress";
-
-$conn = new mysqli($host, $user, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$sql = "SELECT * FROM admin_bd";
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-
-        $username = $row["COL 1"];  // or col1 (depending on structure)
-        $password = $row["COL 2"];
-        $role     = $row["COL 3"];
-
-        echo "User: " . $username . " - Role: " . $role . "<br>";
-    }
-} else {
-    echo "0 results";
-}
-
-$conn->close();
-?>
-
-
 </body>
 </html>
