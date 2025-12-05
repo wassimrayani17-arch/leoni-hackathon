@@ -1,460 +1,314 @@
 <?php
-session_start();
+// ============================================
+// admin2.php - Display demands.csv data
+// Shows demand information with Accept/Refuse
+// ============================================
 
-// Check if user is logged in
-if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    header("Location: main.php");
-    exit;
+// Initialize messages array
+$messages = [];
+
+// ============================================
+// HANDLE ACCEPT DEMAND
+// ============================================
+if (isset($_POST['accept_demand'])) {
+    $demand_id = intval($_POST['demand_id']);
+    $message = "Demand #" . $demand_id . " accepted successfully!";
+    $messages[] = [
+        'type' => 'success',
+        'text' => $message
+    ];
 }
 
-// Check if user has role 2
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 2) {
-    // If not role 2, redirect based on role
-    if ($_SESSION['role'] == 1) {
-        header("Location: admin1.php");
-    } else {
-        header("Location: main.php");
-    }
-    exit;
+// ============================================
+// HANDLE REFUSE DEMAND
+// ============================================
+if (isset($_POST['refuse_demand'])) {
+    $demand_id = intval($_POST['refuse_id']);
+    $message = "Demand #" . $demand_id . " refused successfully!";
+    $messages[] = [
+        'type' => 'success',
+        'text' => $message
+    ];
 }
 
-// Database connection
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "wordpress";
+// ============================================
+// LOAD DEMANDS FROM CSV
+// ============================================
+$demands = [];
+$csv_file = 'demands.csv';
 
-$conn = new mysqli($host, $user, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Handle approval/decline actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action']) && isset($_POST['demand_id'])) {
-        $demand_id = intval($_POST['demand_id']);
-        $action = $_POST['action'];
+if (file_exists($csv_file)) {
+    if (($handle = fopen($csv_file, 'r')) !== false) {
+        $header = fgetcsv($handle); // Skip header row
         
-        // Prepare status update
-        if ($action === 'approve') {
-            $status = 'approved';
-            $message = "Demand #$demand_id has been approved.";
-            $message_type = 'success';
-        } elseif ($action === 'decline') {
-            $status = 'declined';
-            $message = "Demand #$demand_id has been declined.";
-            $message_type = 'success';
-        } elseif ($action === 'delete') {
-            // Delete the demand
-            $stmt = $conn->prepare("DELETE FROM demands WHERE id = ?");
-            $stmt->bind_param("i", $demand_id);
-            if ($stmt->execute()) {
-                $message = "Demand #$demand_id has been deleted.";
-                $message_type = 'success';
-            } else {
-                $message = "Error deleting demand: " . $stmt->error;
-                $message_type = 'error';
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) >= 3) {
+                $demands[] = [
+                    'id' => $row[0],
+                    'supplier' => $row[1],
+                    'amount' => $row[2],
+                    'status' => 'pending'
+                ];
             }
-            $stmt->close();
-            
-            // Refresh page to show updated list
-            header("Location: admin2.php");
-            exit;
         }
-        
-        // Update status if not delete action
-        if (isset($status)) {
-            $stmt = $conn->prepare("UPDATE demands SET status = ? WHERE id = ?");
-            $stmt->bind_param("si", $status, $demand_id);
-            if ($stmt->execute()) {
-                $_SESSION['message'] = $message;
-                $_SESSION['message_type'] = $message_type;
-            } else {
-                $_SESSION['message'] = "Error updating demand: " . $stmt->error;
-                $_SESSION['message_type'] = 'error';
-            }
-            $stmt->close();
-            
-            // Refresh page to show updated list
-            header("Location: admin2.php");
-            exit;
-        }
+        fclose($handle);
     }
 }
-
-// Get all demands from database
-$query = "SELECT * FROM demands ORDER BY created_at DESC";
-$result = $conn->query($query);
-
-// Check if demands table exists, if not create it
-if (!$result) {
-    // Create demands table if it doesn't exist
-    $createTableSQL = "
-    CREATE TABLE IF NOT EXISTS demands (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        supplier VARCHAR(255) NOT NULL,
-        user_name VARCHAR(255) NOT NULL,
-        amount_tnd DECIMAL(10,2) NOT NULL,
-        status VARCHAR(20) DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )";
-    
-    if ($conn->query($createTableSQL) === TRUE) {
-        $result = $conn->query($query);
-    }
-}
-
-// Get message from session if exists
-$display_message = isset($_SESSION['message']) ? $_SESSION['message'] : '';
-$display_message_type = isset($_SESSION['message_type']) ? $_SESSION['message_type'] : '';
-unset($_SESSION['message'], $_SESSION['message_type']);
-
-$conn->close();
 ?>
+
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin 2 - Gestion des Demandes</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="assets/css/admin1.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Demands Management</title>
+    <link rel="stylesheet" href="admin1.css">
     <style>
-        /* Additional styles for admin2 */
+        /* Additional styles for demands page */
         .demands-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            margin-top: 20px;
         }
-        
+
         .demand-card {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 20px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 16px;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .demand-card:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid;
-            margin-bottom: 15px;
         }
-        
-        .demand-card.pending {
-            border-left-color: #ffa500;
-        }
-        
-        .demand-card.approved {
-            border-left-color: #28a745;
-        }
-        
-        .demand-card.declined {
-            border-left-color: #dc3545;
-        }
-        
+
         .demand-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
+            border-bottom: 2px solid #003f7f;
             padding-bottom: 10px;
-            border-bottom: 1px solid #eaeaea;
         }
-        
+
         .demand-id {
-            font-weight: bold;
+            font-weight: 700;
             color: #003f7f;
             font-size: 1.1rem;
         }
-        
-        .demand-status {
-            padding: 4px 12px;
-            border-radius: 20px;
+
+        .demand-date {
             font-size: 0.85rem;
-            font-weight: bold;
-            text-transform: uppercase;
+            color: #888;
         }
-        
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-approved {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .status-declined {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .demand-info {
+
+        .demand-info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 14px;
+            margin-bottom: 16px;
         }
-        
-        .info-item {
-            display: flex;
-            flex-direction: column;
+
+        .info-block {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #00a2c7;
         }
-        
+
         .info-label {
-            font-size: 0.85rem;
-            color: #6c757d;
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
             margin-bottom: 4px;
         }
-        
+
         .info-value {
-            font-size: 1rem;
+            font-size: 0.95rem;
+            color: #1a1a1a;
             font-weight: 500;
-            color: #333;
         }
-        
-        .amount-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #003f7f;
-        }
-        
+
         .demand-actions {
             display: flex;
             gap: 10px;
-            justify-content: flex-end;
-            margin-top: 15px;
+            margin-top: 16px;
         }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
+
+        .btn-accept, .btn-refuse {
+            flex: 1;
+            padding: 10px 14px;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
+            border-radius: 8px;
             font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
         }
-        
-        .btn-warning {
-            background: linear-gradient(135deg, #ffc107, #fd7e14);
+
+        .btn-accept {
+            background: linear-gradient(135deg, #00a86b, #00d084);
             color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
         }
-        
+
+        .btn-accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);
+        }
+
+        .btn-refuse {
+            background: linear-gradient(135deg, #d0002b, #ff3557);
+            color: white;
+        }
+
+        .btn-refuse:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(208, 0, 43, 0.3);
+        }
+
+        .btn-accept:active, .btn-refuse:active {
+            transform: translateY(0);
+        }
+
         .no-demands {
             text-align: center;
-            padding: 40px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            color: #6c757d;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 1.1rem;
         }
-        
-        .filter-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            background: #e9ecef;
-            color: #495057;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-        
-        .filter-btn.active {
-            background: #003f7f;
-            color: white;
-        }
-        
-        .filter-btn:hover {
-            background: #dee2e6;
-        }
-        
-        .filter-btn.active:hover {
-            background: #00264d;
-        }
-        
-        .demand-date {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-        
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            text-decoration: none;
+
+        .status-badge {
             display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
-        
-        .logout-btn:hover {
-            filter: brightness(1.1);
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-refused {
+            background: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
 <body>
-<div class="page-wrapper">
-    <header class="topbar">
-        <h1 class="topbar-title">Admin 2 - Gestion des Demandes</h1>
-        <p class="topbar-subtitle">Approuver ou refuser les demandes soumises via l'application mobile</p>
-        <a href="logout.php" class="logout-btn">Déconnexion</a>
-    </header>
-    <br>
-
-    <?php if ($display_message): ?>
-        <div class="alert alert-<?php echo htmlspecialchars($display_message_type); ?>">
-            <?php echo htmlspecialchars($display_message); ?>
+    <div class="page-wrapper">
+        <!-- Topbar -->
+        <div class="topbar">
+            <h1 class="topbar-title">📋 Demands Management</h1>
+            <p class="topbar-subtitle">Review and manage pending demands from suppliers</p>
         </div>
-    <?php endif; ?>
 
-    <div class="admin-column">
-        <h2 class="section-title">Demandes des Utilisateurs</h2>
-        <p class="helper-text">Cliquez sur "Approuver" ou "Refuser" pour traiter chaque demande. Vous pouvez également supprimer une demande.</p>
-        
-        <div class="filter-buttons" id="filterButtons">
-            <button class="filter-btn active" data-filter="all">Toutes</button>
-            <button class="filter-btn" data-filter="pending">En attente</button>
-            <button class="filter-btn" data-filter="approved">Approuvées</button>
-            <button class="filter-btn" data-filter="declined">Refusées</button>
-        </div>
-        
-        <div class="demands-container" id="demandsContainer">
-            <?php if ($result && $result->num_rows > 0): ?>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                    <?php 
-                    $status_class = $row['status'] ?? 'pending';
-                    $status_text = $status_class;
-                    $created_date = date('d/m/Y H:i', strtotime($row['created_at']));
-                    ?>
-                    <div class="demand-card <?php echo htmlspecialchars($status_class); ?>" data-status="<?php echo htmlspecialchars($status_class); ?>">
-                        <div class="demand-header">
-                            <div class="demand-id">Demande #<?php echo htmlspecialchars($row['id']); ?></div>
-                            <span class="demand-status status-<?php echo htmlspecialchars($status_class); ?>">
-                                <?php 
-                                $status_labels = [
-                                    'pending' => 'En attente',
-                                    'approved' => 'Approuvée',
-                                    'declined' => 'Refusée'
-                                ];
-                                echo htmlspecialchars($status_labels[$status_class] ?? $status_class);
-                                ?>
-                            </span>
-                        </div>
-                        
-                        <div class="demand-info">
-                            <div class="info-item">
-                                <span class="info-label">Fournisseur</span>
-                                <span class="info-value"><?php echo htmlspecialchars($row['supplier']); ?></span>
-                            </div>
-                            
-                            <div class="info-item">
-                                <span class="info-label">Utilisateur</span>
-                                <span class="info-value"><?php echo htmlspecialchars($row['user_name']); ?></span>
-                            </div>
-                            
-                            <div class="info-item">
-                                <span class="info-label">Montant</span>
-                                <span class="info-value amount-value"><?php echo number_format($row['amount_tnd'], 2); ?> TND</span>
-                            </div>
-                            
-                            <div class="info-item">
-                                <span class="info-label">Date de soumission</span>
-                                <span class="info-value"><?php echo htmlspecialchars($created_date); ?></span>
-                            </div>
-                        </div>
-                        
-                        <div class="demand-date">
-                            Dernière mise à jour: <?php echo isset($row['updated_at']) ? date('d/m/Y H:i', strtotime($row['updated_at'])) : $created_date; ?>
-                        </div>
-                        
-                        <?php if ($status_class == 'pending'): ?>
-                            <div class="demand-actions">
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="demand_id" value="<?php echo htmlspecialchars($row['id']); ?>">
-                                    <input type="hidden" name="action" value="approve">
-                                    <button type="submit" class="btn btn-success" onclick="return confirm('Approuver cette demande ?')">
-                                        Approuver
-                                    </button>
-                                </form>
-                                
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="demand_id" value="<?php echo htmlspecialchars($row['id']); ?>">
-                                    <input type="hidden" name="action" value="decline">
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Refuser cette demande ?')">
-                                        Refuser
-                                    </button>
-                                </form>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <div class="demand-actions">
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="demand_id" value="<?php echo htmlspecialchars($row['id']); ?>">
-                                <input type="hidden" name="action" value="delete">
-                                <button type="submit" class="btn btn-warning" onclick="return confirm('Supprimer définitivement cette demande ?')">
-                                    Supprimer
-                                </button>
-                            </form>
-                        </div>
+        <!-- Alert Messages -->
+        <?php if (!empty($messages)): ?>
+            <div class="alerts-container">
+                <?php foreach ($messages as $msg): ?>
+                    <div class="alert alert-<?php echo $msg['type']; ?>">
+                        <?php echo htmlspecialchars($msg['text']); ?>
                     </div>
-                <?php endwhile; ?>
-            <?php else: ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Demands Container -->
+        <div class="admin-column">
+            <h2 class="section-title">All Demands</h2>
+            <p class="helper-text">Total demands from suppliers. Click "Accept" or "Refuse" to manage each demand.</p>
+
+            <?php if (empty($demands)): ?>
                 <div class="no-demands">
-                    <h3>Aucune demande trouvée</h3>
-                    <p>Les demandes soumises via l'application mobile apparaîtront ici.</p>
-                    <p><small>Assurez-vous que la table "demands" existe dans la base de données.</small></p>
+                    ✓ No pending demands at this time.
+                </div>
+            <?php else: ?>
+                <div class="demands-container">
+                    <?php foreach ($demands as $demand): ?>
+                        <div class="demand-card">
+                            <!-- Header with ID and Date -->
+                            <div class="demand-header">
+                                <div>
+                                    <span class="demand-id">Demand #<?php echo htmlspecialchars($demand['id']); ?></span>
+                                    <span class="status-badge status-<?php echo htmlspecialchars($demand['status']); ?>">
+                                        <?php echo ucfirst(htmlspecialchars($demand['status'])); ?>
+                                    </span>
+                                </div>
+                                <span class="demand-date"><?php echo date('Y-m-d H:i', strtotime($demand['created_at'])); ?></span>
+                            </div>
+
+                            <!-- Demand Information Grid -->
+                            <div class="demand-info-grid">
+                                <div class="info-block">
+                                    <div class="info-label">Supplier</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['supplier']); ?></div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Amount (TND)</div>
+                                    <div class="info-value"><?php echo number_format($demand['amount'], 2); ?> TND</div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Employee Name</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['employee_name'] ?? 'N/A'); ?></div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['email'] ?? 'N/A'); ?></div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Seniority</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['seniority'] ?? 'N/A'); ?></div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Absence</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['absence'] ?? 'N/A'); ?></div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Advance</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['advance'] ?? 'N/A'); ?></div>
+                                </div>
+
+                                <div class="info-block">
+                                    <div class="info-label">Salary Range</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['salary_range'] ?? 'N/A'); ?></div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="demand-actions">
+                                <!-- Accept Form -->
+                                <form method="POST" style="flex: 1;">
+                                    <input type="hidden" name="accept_demand" value="1">
+                                    <input type="hidden" name="demand_id" value="<?php echo $demand['id']; ?>">
+                                    <button type="submit" class="btn-accept">✓ Accept</button>
+                                </form>
+
+                                <!-- Refuse Form -->
+                                <form method="POST" style="flex: 1;">
+                                    <input type="hidden" name="refuse_demand" value="1">
+                                    <input type="hidden" name="refuse_id" value="<?php echo $demand['id']; ?>">
+                                    <button type="submit" class="btn-refuse">✕ Refuse</button>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             <?php endif; ?>
         </div>
     </div>
-</div>
-
-<script>
-// Filter demands by status
-document.addEventListener('DOMContentLoaded', function() {
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    const demands = document.querySelectorAll('.demand-card');
-    
-    filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active button
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            const filter = this.getAttribute('data-filter');
-            
-            // Filter demands
-            demands.forEach(demand => {
-                if (filter === 'all' || demand.getAttribute('data-status') === filter) {
-                    demand.style.display = 'block';
-                } else {
-                    demand.style.display = 'none';
-                }
-            });
-        });
-    });
-    
-    // Auto-refresh page every 30 seconds to check for new demands
-    setTimeout(function() {
-        window.location.reload();
-    }, 30000);
-});
-</script>
 </body>
 </html>
