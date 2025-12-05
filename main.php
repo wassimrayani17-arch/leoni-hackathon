@@ -33,6 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($row = $result->fetch_assoc()) {
         $role = $row["COL 3"];
+        
+        // STORE SESSION DATA - THIS WAS MISSING!
+        $_SESSION['loggedin'] = true;
+        $_SESSION['username'] = $inputUser;
+        $_SESSION['role'] = $role;
 
         if ($role == 1) {
             header("Location: admin1.php");
