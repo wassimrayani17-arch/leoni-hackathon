@@ -158,8 +158,8 @@ $conn->close();
     <?php endforeach; ?>
 
     <main class="admin-layout">
-    <br>
-    <!-- ========== IMPORT CSV (FIRST) ========== -->
+        <br>
+        <!-- ========== IMPORT CSV (FIRST) ========== -->
         <section class="admin-column">
             <h2 class="section-title">Importer un CSV</h2>
             <p class="helper-text">
@@ -177,7 +177,7 @@ $conn->close();
             </form>
         </section>
 
-    <!-- ========== ADD ROW (SECOND) ========== -->
+        <!-- ========== ADD ROW (SECOND) ========== -->
         <section class="admin-column">
             <h2 class="section-title">Ajouter un employé (manuel)</h2>
 
@@ -239,7 +239,7 @@ $conn->close();
             </form>
         </section>
 
-    <!-- ========== DELETE ROW (THIRD) ========== -->
+        <!-- ========== DELETE ROW (THIRD) ========== -->
         <section class="admin-column">
             <h2 class="section-title">Supprimer un employé</h2>
             <p class="helper-text">Suppression par <b>NOM ET PRENOM</b> (COL 2) dans la base.</p>
@@ -252,6 +252,34 @@ $conn->close();
 
                 <button type="submit" name="delete_row" class="btn btn-danger">Supprimer la ligne</button>
             </form>
+        </section>
+
+        <!-- ========== PARAMÈTRES (FRONT-END ONLY) ========== -->
+        <section class="admin-column">
+            <h2 class="section-title">Paramètres globals</h2>
+
+
+            <div class="admin-form">
+                <div class="field-group">
+                    <label class="field-label">Max Absence</label>
+                    <input
+                        type="number"
+                        class="input-field"
+                        value="5"
+                        min="0"
+                    >
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Min Ancienneté</label>
+                    <input
+                        type="number"
+                        class="input-field"
+                        value="3"
+                        min="0"
+                    >
+                </div>
+            </div>
         </section>
 
     </main>

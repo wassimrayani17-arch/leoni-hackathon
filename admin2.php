@@ -99,7 +99,7 @@ if (file_exists($csv_file)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Demands Management</title>
-    <link rel="stylesheet" href="admin1.css">
+    <link rel="stylesheet" href="assets/css/admin2.css">
     <style>
         /* Additional styles for demands page */
         .demands-container {
@@ -283,8 +283,7 @@ if (file_exists($csv_file)) {
     <div class="page-wrapper">
         <!-- Topbar -->
         <div class="topbar">
-            <h1 class="topbar-title">📋 Demands Management</h1>
-            <p class="topbar-subtitle">Review and manage pending demands from suppliers</p>
+            <h1 class="topbar-title">📋 Gestion de Demandes</h1>
         </div>
 
 
@@ -302,7 +301,7 @@ if (file_exists($csv_file)) {
 
         <!-- Demands Container -->
         <div class="admin-column">
-            <h2 class="section-title">All Demands</h2>
+            <h2 class="section-title">Toutes les Demandes</h2>
             <p class="helper-text">Total demands from suppliers. Click "Accept" or "Refuse" to manage each demand.</p>
 
 
@@ -317,7 +316,7 @@ if (file_exists($csv_file)) {
                             <!-- Header with ID and Date -->
                             <div class="demand-header">
                                 <div>
-                                    <span class="demand-id">Demand #<?php echo htmlspecialchars($demand['id']); ?></span>
+                                    <span class="demand-id"><?php echo htmlspecialchars($demand['id']); ?></span>
                                     <span class="status-badge status-<?php echo htmlspecialchars($demand['status']); ?>">
                                         <?php echo ucfirst(htmlspecialchars($demand['status'])); ?>
                                     </span>
@@ -329,32 +328,14 @@ if (file_exists($csv_file)) {
                             <!-- Demand Information Grid -->
                             <div class="demand-info-grid">
                                 <div class="info-block">
-                                    <div class="info-label">Supplier</div>
+                                    <div class="info-label">Fournisseur</div>
                                     <div class="info-value"><?php echo htmlspecialchars($demand['supplier']); ?></div>
                                 </div>
 
 
                                 <div class="info-block">
-                                    <div class="info-label">Amount (TND)</div>
+                                    <div class="info-label">Prix (TND)</div>
                                     <div class="info-value"><?php echo number_format($demand['amount'], 2); ?> TND</div>
-                                </div>
-
-
-                                <div class="info-block">
-                                    <div class="info-label">Employee Name</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($demand['employee_name'] ?? 'N/A'); ?></div>
-                                </div>
-
-
-                                <div class="info-block">
-                                    <div class="info-label">Email</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($demand['email'] ?? 'N/A'); ?></div>
-                                </div>
-
-
-                                <div class="info-block">
-                                    <div class="info-label">Seniority</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($demand['seniority'] ?? 'N/A'); ?></div>
                                 </div>
 
 
@@ -365,14 +346,8 @@ if (file_exists($csv_file)) {
 
 
                                 <div class="info-block">
-                                    <div class="info-label">Advance</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($demand['advance'] ?? 'N/A'); ?></div>
-                                </div>
-
-
-                                <div class="info-block">
-                                    <div class="info-label">Salary Range</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($demand['salary_range'] ?? 'N/A'); ?></div>
+                                    <div class="info-label">Ancienneté</div>
+                                    <div class="info-value"><?php echo htmlspecialchars($demand['salary_range'] ?? 2); ?></div>
                                 </div>
                             </div>
 
@@ -383,7 +358,8 @@ if (file_exists($csv_file)) {
                                 <form method="POST" style="flex: 1;">
                                     <input type="hidden" name="accept_demand" value="1">
                                     <input type="hidden" name="demand_id" value="<?php echo $demand['id']; ?>">
-                                    <button type="submit" class="btn-accept" style="color: green;">✓ Accept</button>
+                                    <button type="submit" class="btn-accept">✓ Accept</button>
+
                                     
                                 </form>
 

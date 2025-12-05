@@ -1,4 +1,8 @@
-"nom prenom",fournisseur,prix
-faziw,samsung,200
-"hammouda lion werfelli",redmi,400
-"obama ",toshiba,150
+nom prenom,fournisseur,prix,deduct_tot,salaire,pourcentage,seniority
+FOULEN BEN FOULEN 5,samsung,200,50,750,=(C2+D2)/E2,2
+FOULEN BEN FOULEN 9,redmi,100,100,750,=(C3+D3)/E3,3
+FOULEN BEN FOULEN 11,toshiba,150,100,850,=(C4+D4)/E4,4
+FOULEN BEN FOULEN 13,hp,200,0,750,=(C5+D5)/E5,2
+FOULEN BEN FOULEN 17,dell,150,100,750,=(C6+D6)/E6,2
+FOULEN BEN FOULEN 41,toshiba,200,100,900,=(C9+D9)/E9,3
+FOULEN BEN FOULEN 35,acer,50,100,900,=(C8+D8)/E8,2
