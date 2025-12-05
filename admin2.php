@@ -1,8 +1,5 @@
 <?php
-// ============================================
-// admin2.php - Display demands.csv data
-// Shows demand information with Accept/Refuse
-// ============================================
+
 
 
 // Initialize messages array
